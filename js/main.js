@@ -9,7 +9,6 @@ function Game() {
     this.scene;
     this.camera;
     this.renderer;
-    this.stats;
     this.clock;
     this.controls;
 
@@ -26,19 +25,55 @@ function Game() {
     // Object arrays
     this.objects = [];
     this.world = undefined;
-    this.phys = undefined;
-    this.physMeshes = [];
-    this.physBodies = [];
 
     //==========================================================
     // InitScene
     //==========================================================
-    Game.prototype.initScene = function() {
+    Game.prototype.InitScene = function() {
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera(this.viewAngle, this.aspect, this.near, this.far);
         this.camera.position.set(32,25,35);
         this.camera.rotation.set(-2.5, -0.03, -3);
         this.scene.add(this.camera);
+
+        this.world = new Voxel(64, 16, 0.1); // worldSize, chunkSize, blockSize
+
+        const ws = this.world.worldSize;
+        const x2 = ws / 2;
+        const y2 = ws / 2;
+        const z2 = ws / 2;
+        let x, y, z;
+        for (z = 0; z < ws; ++z) {
+          for (y = 0; y < ws; ++y) {
+            for (x = 0; x < ws; ++x) {
+
+              //if (Math.random() > 0.9) { continue; } // skip 10% of the blocks
+
+              // draw a csg subtraction of an overly large sphere
+              const dx = x - x2;
+              const dy = y - y2;
+              const dz = z - z2;
+              if (Math.sqrt( dx*dx + dy*dy + dz*dz ) < x2*1.2) { continue; }
+
+              this.world.AddBlock(x, y, z, x/ws, y/ws, z/ws);
+            }
+          }
+        }
+
+        //this.world.RemoveBlock(0, 63, 63);
+
+        this.world.Prepare();
+
+        if (false) {
+          var planeSize = this.world.worldSize*(this.world.blockSize);
+          var geo = new THREE.PlaneBufferGeometry(planeSize, planeSize, 1, 1);
+          var mat = new THREE.MeshLambertMaterial({color: 0xEED6AF});
+          var mesh = new THREE.Mesh(geo, mat);
+          mesh.position.set(planeSize/2, 0, planeSize/2);
+          mesh.rotation.x = -Math.PI/2;
+          this.scene.add(mesh);
+        }
+
     };
 
     //==========================================================
@@ -46,15 +81,6 @@ function Game() {
     //==========================================================
     Game.prototype.Init = function(mapId) {
         this.clock = new THREE.Clock();
-        this.stats = new Stats();
-        //$('#stats').append(this.stats.domElement);
-        this.stats = new Stats();
-        this.stats.domElement.style.position = 'absolute';
-        this.stats.domElement.style.bottom = '0px';
-        this.stats.domElement.style.zIndex = 100;
-        $('#container').append( this.stats.domElement );
-
-        this.initScene();
 
         this.renderer = new THREE.WebGLRenderer( {antialias: false} );
         this.renderer.setSize(this.screenWidth, this.screenHeight);
@@ -69,7 +95,7 @@ function Game() {
         this.controls = new THREE.OrbitControls( this.camera, this.renderer.domElement );
 
         THREEx.WindowResize(this.renderer, this.camera);
-        
+
         var ambientLight = new THREE.AmbientLight( 0x330000 );
         this.scene.add( ambientLight );
 
@@ -101,67 +127,13 @@ function Game() {
         dirLight.shadowBias = -0.0001;
         dirLight.shadowDarkness = 0.45;
 
-        this.world = new World();
-        this.world.PreInit(10000); 
-
-
-        var planeSize = this.world.worldSize*(this.world.blockSize);
-        var geo = new THREE.PlaneBufferGeometry(planeSize, planeSize, 1, 1);
-        var mat = new THREE.MeshLambertMaterial({color: 0xEED6AF});
-        var mesh = new THREE.Mesh(geo, mat);
-        mesh.position.set(planeSize/2, 0, planeSize/2);
-        mesh.rotation.x = -Math.PI/2;
-        this.scene.add(mesh);
-        this.CreateWater();
-
         this.animate();
-    };
-    
-    Game.prototype.CreateWater = function(scene) {
-        var planeSize = this.world.worldSize*(this.world.blockSize);
-        var geometry = new THREE.PlaneGeometry( planeSize, planeSize, 16 - 1, 16 - 1 );
-        geometry.applyMatrix( new THREE.Matrix4().makeRotationX( - Math.PI / 2 ) );
-        geometry.dynamic = true;
-
-        var i, j, il, jl;
-        for ( i = 0, il = geometry.vertices.length; i < il; i ++ ) {
-            geometry.vertices[ i ].y = 0.4 * Math.sin( i/2 );
-        }
-
-        geometry.computeFaceNormals();
-        geometry.computeVertexNormals();
-
-        var texture = THREE.ImageUtils.loadTexture( "textures/water2.png" );
-        texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-        texture.repeat.set( 10, 10 );
-
-        var material = new THREE.MeshPhongMaterial( { color: 0x00CCFF, map: texture, transparent: true, opacity: 0.5} );
-
-        var mesh = new THREE.Mesh(geometry, material);
-        mesh.position.set(planeSize/2, 0.5, planeSize/2);
-        mesh.receiveShadow = true;
-        this.mesh = mesh;
-        this.scene.add(this.mesh);
-    };
-
-    Game.prototype.DrawWater= function(time, delta) {
-        for ( var i = 0, l = this.mesh.geometry.vertices.length; i < l; i ++ ) {
-            this.mesh.geometry.vertices[ i ].y = 0.2 * Math.sin( i / 5 + ( time + i ) / 4 );
-        }
-        this.mesh.geometry.verticesNeedUpdate = true;
     };
 
     Game.prototype.onWindowResize = function() {
         this.camera.aspect = window.innerWidth / window.innerHeight;
         this.camera.updateProjectionMatrix();
         this.renderer.setSize( window.innerWidth, window.innerHeight );
-    };
-
-    Game.prototype.getDistance = function(v1, v2) {
-        var dx = v1.x - v2.x;
-        var dy = v1.y - v2.y;
-        var dz = v1.z - v2.z;
-        return Math.sqrt(dx*dx+dy*dy+dz*dz);
     };
 
     //==========================================================
@@ -193,7 +165,7 @@ function Game() {
             THREE.AnimationHandler.update(this.invMaxFps);
             for(var i = 0; i < this.objects.length; i++) {
                 if(this.objects[i] != undefined) {
-                    if(this.objects[i].remove == 1) { 
+                    if(this.objects[i].remove == 1) {
                         this.objects.splice(i, 1);
                     } else {
                         this.objects[i].Draw(time, this.invMaxFps, i);
@@ -201,16 +173,8 @@ function Game() {
                 }
             }
             this.frameDelta -= this.invMaxFps;
-            this.DrawWater(time, this.invMaxFps);
-        }	
-        this.stats.update();
+        }
         this.controls.update();
     };
 
-    Game.prototype.rand = function(min, max, n) {
-        var r, n = n||0;
-        if (min < 0) r = min + Math.random() * (Math.abs(min)+max);
-        else r = min + Math.random() * max;
-        return r.toFixed(n)*1;
-    };
 }
