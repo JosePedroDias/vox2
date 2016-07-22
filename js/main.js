@@ -60,7 +60,7 @@ function Game() {
           }
         }
 
-        //this.world.RemoveBlock(0, 63, 63);
+        this.world.RemoveBlock(0, 63, 63);
 
         this.world.Prepare();
 

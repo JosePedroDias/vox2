@@ -78,11 +78,18 @@ Voxel.prototype = {
     var chunk = this.getChunk(chunkId);
     if (!chunk) { return; }
 
-    const pos = this.getBlockPosFromXYZ(x, y, z)
+    const pos = this.getBlockPosFromXYZ(x, y, z);
+    var chunkPos = this.worldToChunkPosition(x, y, z);
+    var cx = chunkPos.x;
+
     for (let i = 0; i < chunk.length; i++) {
       const block = chunk[i];
       if (block.pos === pos) {
         chunk.splice(i, 1);
+        
+        // TODO not sure about this
+        //this.chunksActive[chunkId][cx][chunkPos.y] = this.chunksActive[chunkId][cx][chunkPos.y] | ( 1 << chunkPos.z);
+        this.chunksActive[chunkId][cx][chunkPos.y] = 0;
         return;
       }
     }
@@ -119,7 +126,10 @@ Voxel.prototype = {
       if(this.chunksActive[chunkId][cx] == undefined) {
           this.chunksActive[chunkId][cx] = new Array();
       }
+
+      // TODO don't understand
       this.chunksActive[chunkId][cx][chunkPos.y] = this.chunksActive[chunkId][cx][chunkPos.y] | ( 1 << chunkPos.z);
+      //this.chunksActive[chunkId][cx][chunkPos.y] = 1;
   },
 
 
