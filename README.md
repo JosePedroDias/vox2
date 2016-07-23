@@ -28,3 +28,6 @@ Added paint method and color ops:
 
 * `voxel.paint( (x:number, y:number, z:number)=>number )`
 * check the `game.initScene()` method color ops
+
+
+Adding support for qubicle file format I/O (simple and popular enough voxel format)

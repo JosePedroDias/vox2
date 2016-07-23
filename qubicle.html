@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+
+    <title>Vox2</title>
+
+    <script src="libs/three.min.js"></script>
+    <script src="libs/OrbitControls.js"></script>
+    <script src="libs/THREEx.KeyboardState.js"></script>
+    <script src="libs/THREEx.WindowResize.js"></script>
+
+    <style>
+      html, body {
+        /*cursor: none;*/
+        background-color: #000000;
+        color: #ffffff;
+        font-family:Monospace;
+        font-size:13px;
+        text-align:center;
+        font-weight: bold;
+
+        background-color: #000000;
+        margin: 0 auto;
+        overflow: hidden;
+        height: 100%;
+        width: 100%;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -khtml-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+      }
+    </style>
+  </head>
+
+  <body>
+    <input type="file" value="load qb" id="in"> <br>
+    <button id="out">generate qb</button>
+
+    <script src="js/qubicle.js"></script>
+
+    <script>
+      document.querySelector('#in').addEventListener('change', function(ev) {
+        const f = ev.target.files[0];
+        const fr = new FileReader();
+        fr.addEventListener('load', function(ev) {
+          const ab = ev.target.result;
+          const result = Qubicle.read(ab);
+          console.log(result)
+        });
+        fr.readAsArrayBuffer(f);
+      });
+
+      document.querySelector('#out').addEventListener('click', function() {
+        const fileName = 'test2';
+        const dims = [3, 3, 3];
+        const pos = [0, 0, 0];
+        const objWithGetter = {
+          get: function(x, y, z) { return x + 100*y + 10000*z; }
+        };
+
+        const data = Qubicle.write(fileName, dims, pos, objWithGetter);
+        const blob = new Blob([data], {type: 'octet/stream'});
+        const url = window.URL.createObjectURL(blob);
+
+        const aEl = document.createElement('a');
+        document.body.appendChild(aEl);
+        aEl.style = 'display: none';
+        aEl.href = url;
+        aEl.download = fileName + '.qb';
+        aEl.click();
+        window.URL.revokeObjectURL(url);
+      });
+    </script>
+  </body>
+</html>
