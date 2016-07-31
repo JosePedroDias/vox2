@@ -119,7 +119,6 @@ const Qubicle = {
     dv.setUint8(offset, n); offset += size;
 
     for (let sI = 0; sI < n; ++sI) {
-      console.log(sI, fileName.charCodeAt(sI));
       dv.setUint8(offset++, fileName.charCodeAt(sI) );
     }
 
